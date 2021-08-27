@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow --tags
+      with: 
+        fetch-depth: 0
     
     - name: Set up JDK 8
       uses: actions/setup-java@v2
@@ -28,14 +29,10 @@ jobs:
 
     - name: Setup the workspace
       run: ./gradlew setupCIWorkspace
-
-    - uses: actions/checkout@v2
-    - run: git status
     
     - name: Build the mod
       run: ./gradlew build
       
-            
     - name: git
       run: |
         # setup the username and email. I tend to use 'GitHub Actions Bot' with no email by default
