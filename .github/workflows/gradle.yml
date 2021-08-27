@@ -11,9 +11,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 8
@@ -22,7 +20,25 @@ jobs:
         java-version: '8'
         distribution: 'adopt'
         cache: gradle
+        
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Build with Gradle
+    - name: Setup the workspace
+      run: ./gradlew setupCIWorkspace
+    - name: Build the mod
       run: ./gradlew build
+      
+    #- name: Uploading artifacts
+    #  uses: actions/upload-artifact@v2
+    #  with:
+    #    name: Release
+    #    path: build/libs/
+        
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Development Build"
+        files: build/libs/*.jar
+            
