@@ -54,7 +54,7 @@ configure<UserExtension> {
     )
 }
 val gitVersion: groovy.lang.Closure<String> by extra
-version = gitVersion(mapOf("prefix" to "version@")) // -> 2.15.0
+version = projectMinecraftVersion + "-" + gitVersion(mapOf("prefix" to "woag@"))
 
 repositories {
     mavenLocal()
