@@ -141,14 +141,13 @@ tasks {
     }
     val relocateShadowJar = register<ConfigureShadowRelocation>("relocateShadowJar")
     val shadowJarTask = named<ShadowJar>("shadowJar") {
-        //Enable package relocation in resulting shadow jar
-        relocateShadowJar.get().apply {
-            prefix = "$projectGroup.shadow"
-            target = this@named
-        }
-        dependsOn(relocateShadowJar)
+        // Only shadows used classes
         minimize()
+        // Loads shadow implementations
         configurations = listOf(shadowImplementation)
+        // Enable package relocation in resulting shadow jar to prevent class overlap
+        relocateShadowJar.get().apply { prefix = "$projectGroup.shadow"; target = this@named }
+        dependsOn(relocateShadowJar)
     }
     // Makes shadowJarTask run in place of the jar task
     jar {
