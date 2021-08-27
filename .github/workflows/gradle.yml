@@ -28,8 +28,18 @@ jobs:
     - name: Build the mod
       run: ./gradlew build
       
-    - name: Uploading artifacts
-      uses: actions/upload-artifact@v2
+    #- name: Uploading artifacts
+    #  uses: actions/upload-artifact@v2
+    #  with:
+    #    name: Release
+    #    path: build/libs/
+        
+    - uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        name: Release
-        path: build/libs/
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Development Build"
+        files: |
+          *.jar
+            
