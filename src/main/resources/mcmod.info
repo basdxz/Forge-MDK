@@ -5,10 +5,10 @@
     "description": "Example placeholder mod.",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "url": "${url}",
-    "updateUrl": "${updateUrl}",
+    "url": " ",
+    "updateUrl": " ",
     "authorList": "basdxz",
-    "credits": "${credits}",
+    "credits": " ",
     "logoFile": "",
     "screenshots": [],
     "dependencies": []
