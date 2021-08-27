@@ -40,5 +40,5 @@ jobs:
         automatic_release_tag: "latest"
         prerelease: true
         title: "Development Build"
-        files: libs/*.jar
+        files: build/libs/*.jar
             
