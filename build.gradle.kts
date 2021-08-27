@@ -40,8 +40,6 @@ val projectForgeVersion: String by project
 val projectReferenceClass: String by project
 // Git tag based version setup
 // Suggested reading: https://semver.org/
-val gitVersion: groovy.lang.Closure<String> by extra
-version = projectMinecraftVersion + "-" + gitVersion()
 group = projectGroup
 //Minecraft Blocks
 configure<UserExtension> {
@@ -55,6 +53,8 @@ configure<UserExtension> {
         )
     )
 }
+val gitVersion: groovy.lang.Closure<String> by extra
+version = gitVersion(mapOf("prefix" to "version@")) // -> 2.15.0
 
 repositories {
     mavenLocal()
