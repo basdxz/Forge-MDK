@@ -1,161 +1,169 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import net.minecraftforge.gradle.user.UserExtension
-import java.io.FileInputStream
-import java.util.*
 import java.io.*
 
 buildscript {
     repositories {
         mavenCentral()
-        maven("http://files.minecraftforge.net/maven")
-        maven("https://jitpack.io")
+        maven("http://files.minecraftforge.net/maven") { name = "Forge Maven" }
+        maven("https://jitpack.io") { name = "JitPack Maven" }
     }
     dependencies {
         classpath("com.github.GTNH2:ForgeGradle:FG_1.2-SNAPSHOT")
     }
 }
-
+apply(plugin = "forge")
 plugins {
     idea
     java
-    id("io.freefair.lombok") version "6.0.0-m2"
+    id("com.palantir.git-version") version "0.12.3"
+    id("com.github.johnrengelman.shadow") version "4.0.4"
 }
-
-apply(plugin = "forge")
-
-//Downloads Javadocs and sources by default
+// Downloads Javadocs and sources for dependencies
 idea {
     module {
-        this.isDownloadJavadoc = true
-        this.isDownloadSources = true
+        isDownloadJavadoc = true
+        isDownloadSources = true
     }
 }
-
-//Set Java to version 1.8
+// Set Java 8 for compile
 java {
-    this.sourceCompatibility = JavaVersion.VERSION_1_8
-    this.targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
-
-//Set standard encoding
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-}
-
-//Add extra sources here
-sourceSets.getByName("main") {
-    java.srcDir("src/main/java")
-}
-
-//Load Minecraft Version
-val Project.minecraft: UserExtension
-    get() = extensions.getByName<UserExtension>("minecraft")
-
-val projectVersion: String by project
-
-//Generates a hash for each new commit to differentiate versions
-var commitHash = Runtime
-        .getRuntime()
-        .exec("git rev-parse --short HEAD")
-        .let { process ->
-            process.waitFor()
-            val output = process.inputStream.use {
-                it.bufferedReader().use(BufferedReader::readText)
-            }
-            process.destroy()
-            output.trim()
-        }
-
-minecraft.version = "1.7.10-10.13.4.1614-1.7.10"
-version = "$projectVersion-$commitHash"
-group = "com.github.basdxz"
-
-//Minecraft Block
+val projectName: String by project
+val projectModId: String by project
+val projectGroup: String by project
+val projectMinecraftVersion: String by project
+val projectForgeVersion: String by project
+val projectReferenceClass: String by project
+// Git tag based version setup
+// Suggested reading: https://semver.org/
+val gitVersion: groovy.lang.Closure<String> by extra
+version = projectMinecraftVersion + "-" + gitVersion(mapOf("prefix" to "version@"))
+group = projectGroup
+//Minecraft Blocks
 configure<UserExtension> {
-    //Replaces version inside the mod
-    this.includes.addAll(
-            arrayOf(
-                    "ExampleMod.java"
-            )
+    version = projectForgeVersion
+    // Replaces version inside the mod
+    includes.addAll(arrayOf(projectReferenceClass))
+    replacements.putAll(
+        // Can be expanded to replace things like modid or mod name if it is something that changes frequently
+        mapOf(
+            Pair("@GRADLE_VERSION_TOKEN@", project.version)
+        )
     )
-    this.replacements.putAll(
-            mapOf(
-                    Pair("@version@", project.version)
-            )
-    )
-
-    //This is sometimes called 'eclipse' instead
-    this.runDir = "run"
 }
 
 repositories {
     mavenLocal()
-    maven("https://gregtech.overminddl1.com/") { this.name = "GT6Maven" }
-    maven("http://maven.ic2.player.to/") { this.name = "ic2" }
-    maven("http://jenkins.usrv.eu:8081/nexus/content/repositories/releases/") { this.name = "UsrvDE/GTNH" }
+    maven("https://gregtech.overminddl1.com/") { name = "Gregtech Maven" }
+    maven("http://maven.ic2.player.to/") { name = "IC2 Maven" }
+    maven("http://jenkins.usrv.eu:8081/nexus/content/repositories/releases/") { name = "UsrvDE/GTNH" }
     ivy {
-        this.name = "gtnh_download_source_underscores"
-        this.artifactPattern("http://downloads.gtnewhorizons.com/Mods_for_Jenkins/[module]_[revision].[ext]")
+        name = "GTNH_Ivy_Underscore"
+        artifactPattern("http://downloads.gtnewhorizons.com/Mods_for_Jenkins/[module]_[revision].[ext]")
     }
     ivy {
-        this.name = "gtnh_download_source"
-        this.artifactPattern("http://downloads.gtnewhorizons.com/Mods_for_Jenkins/[module]-[revision].[ext]")
+        artifactPattern("http://downloads.gtnewhorizons.com/Mods_for_Jenkins/[module]-[revision].[ext]")
+        name = "GTNH_Ivy_Dash"
     }
     ivy {
-        this.name = "BuildCraft"
-        this.artifactPattern("http://www.mod-buildcraft.com/releases/BuildCraft/[revision]/[module]-[revision](-[classifier]).[ext]")
+        artifactPattern("http://www.mod-buildcraft.com/releases/BuildCraft/[revision]/[module]-[revision](-[classifier]).[ext]")
+        name = "BuildCraft_Ivy"
     }
-    maven("http://maven.cil.li/") { this.name = "OpenComputers" }
-    maven("http://default.mobiusstrip.eu/maven") { this.name = "Jabba" }
-    maven("http://chickenbones.net/maven/") { this.name = "CodeChicken" }
-    maven("http://www.ryanliptak.com/maven/") { this.name = "appleCore" }
-    maven("https://jitpack.io")
+    maven("http://maven.cil.li/") { name = "OpenComputers Maven" }
+    maven("http://default.mobiusstrip.eu/maven") { name = "JABBA Maven" }
+    maven("http://chickenbones.net/maven/") { name = "CodeChicken Maven" }
+    maven("http://www.ryanliptak.com/maven/") { name = "appleCore Maven" }
+    maven("https://jitpack.io") { name = "JitPack Maven" }
 }
-
+// Allows JitPack dependencies to be updated more frequently by checking more often.
+configurations.all {
+    resolutionStrategy.cacheDynamicVersionsFor(30, "seconds")
+}
+// Shadow implementations dependencies will be included inside the final jar
+val shadowImplementation by configurations.creating
+configurations["implementation"].extendsFrom(shadowImplementation)
 dependencies {
-    //Local Libraries
-    compile(fileTree("libs") { this.include("*.jar") })
-
+    // Local libraries
+    compile(fileTree("libs") { include("*.jar") })
+    // Version loading
+    val lombokVersion: String by project
+    val manifoldVersion: String by project
     val codechickenlibVersion: String by project
     val codechickencoreVersion: String by project
     val neiVersion: String by project
     val wailaVersion: String by project
 
-    //Optional Libraries for Testing
+    // Java extensions
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+    implementation("systems.manifold:manifold-javadoc-agent:$manifoldVersion")
+    shadowImplementation("systems.manifold:manifold-ext-rt:$manifoldVersion")
+    annotationProcessor("systems.manifold:manifold-ext:$manifoldVersion")
+
+    // Optional libraries for testing
+    runtimeOnly("mcp.mobius.waila:Waila:$wailaVersion")
     runtimeOnly("codechicken:CodeChickenLib:$codechickenlibVersion:dev")
     runtimeOnly("codechicken:CodeChickenCore:$codechickencoreVersion:dev")
     runtimeOnly("codechicken:NotEnoughItems:$neiVersion:dev")
-    runtimeOnly("mcp.mobius.waila:Waila:$wailaVersion")
 }
-
-tasks.withType<Jar> {
-    //Mark as outdated if versions change
-    this.inputs.properties += "version" to project.version
-    this.inputs.properties += "mcversion" to project.minecraft.version
-    this.archiveBaseName.set("ExampleMod-${project.minecraft.version}")
-
-    //Replace versions in mcmod.info
-    this.filesMatching("/mcmod.info") {
-        this.expand(
-                mapOf(
-                        "version" to project.version,
-                        "mcversion" to project.minecraft.version
-                )
-        )
+sourceSets.main {
+    java {
+        // Add extra sources here
+        srcDir("src/main/java")
     }
+    // Uncomment this if you get missing textures when debugging.
+    // output.setResourcesDir(output.classesDirs.asPath)
 }
-
 tasks {
-    val sourcesJar by creating(Jar::class) {
-        this.from(sourceSets.main.get().allSource)
-        this.archiveClassifier.set("sources")
+    withType<JavaCompile> {
+        options.encoding = "UTF-8"
+        options.compilerArgs.add("-Xplugin:Manifold")
+        options.compilerArgs.add("-Xlint:deprecation")
+        options.compilerArgs.add("-Xlint:unchecked")
     }
-
+    withType<Jar> {
+        // Mark as outdated if versions change
+        inputs.properties.plusAssign("version" to project.version)
+        inputs.properties.plusAssign("mcversion" to projectMinecraftVersion)
+        //Replace versions in mcmod.info
+        filesMatching("/mcmod.info") {
+            expand(
+                mapOf(
+                    "version" to project.version,
+                    "mcversion" to projectMinecraftVersion
+                )
+            )
+        }
+    }
+    val relocateShadowJar = register<ConfigureShadowRelocation>("relocateShadowJar")
+    val shadowJarTask = named<ShadowJar>("shadowJar") {
+        //Enable package relocation in resulting shadow jar
+        relocateShadowJar.get().apply {
+            prefix = "$projectGroup.shadow"
+            target = this@named
+        }
+        dependsOn(relocateShadowJar)
+        minimize()
+        configurations = listOf(shadowImplementation)
+    }
+    // Makes shadowJarTask run in place of the jar task
+    jar {
+        dependsOn(shadowJarTask)
+        enabled = false
+    }
+    val sourcesJar by creating(Jar::class) {
+        from(sourceSets.main.get().allSource)
+        archiveClassifier.set("sources")
+    }
     val javadocJar by creating(Jar::class) {
         dependsOn.add(javadoc)
         archiveClassifier.set("javadoc")
         from(javadoc)
     }
-
     val devJar by creating(Jar::class) {
         from(sourceSets.main.get().output)
         archiveClassifier.set("dev")
@@ -164,12 +172,5 @@ tasks {
         archives(sourcesJar)
         archives(javadocJar)
         archives(devJar)
-    }
-}
-
-//Fixes texture loading during 'Minecraft Client' debugging
-sourceSets {
-    this.main {
-        output.setResourcesDir(output.classesDirs.asPath)
     }
 }
