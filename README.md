@@ -1,5 +1,6 @@
+
 # Forge-MDK
-[![Build Status](https://travis-ci.org/basdxz/Forge-MDK.svg?branch=1.7.10)](https://travis-ci.org/basdxz/Forge-MDK)
+# DEPRECATED, USE: https://github.com/FalsePattern/ExampleMod1.7.10
 
 A working barebones Forge MDK implementation
 
